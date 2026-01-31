@@ -3,16 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>长图合成工具</title>
+    <title>长图合成工具 - 智能版</title>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
         :root {
-            --glass: rgba(255, 255, 255, 0.5);
+            --glass: rgba(255, 255, 255, 0.6);
             --border: rgba(255, 255, 255, 0.8);
-            --text: #57606f;
+            --text: #2f3542;
             --blue: #a5d8ff;
             --pink: #ffdeeb;
-            --accent: linear-gradient(45deg, #a5d8ff, #ffdeeb, #a5d8ff);
         }
         
         body {
@@ -23,25 +22,15 @@
             color: var(--text);
         }
 
-        /* 拖入光晕效果 */
-        body.drag-active { box-shadow: inset 0 0 80px rgba(165, 216, 255, 0.7); }
-        body.drag-active::after {
-            content: ""; position: fixed; inset: 0; pointer-events: none;
-            border: 10px solid; z-index: 9999;
-            border-image: linear-gradient(45deg, var(--blue), var(--pink), #fff) 1;
-            animation: flowGlow 2s linear infinite;
-        }
-        @keyframes flowGlow { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
-
         .container { display: grid; grid-template-columns: 360px 1fr; gap: 25px; max-width: 1650px; margin: 0 auto; }
 
         .glass-panel {
-            background: var(--glass); backdrop-filter: blur(20px);
+            background: var(--glass); backdrop-filter: blur(25px);
             border: 2px solid var(--border); border-radius: 24px; padding: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
         }
 
-        /* 视图切换开关 */
+        /* --- 找回视图切换按钮样式 --- */
         .view-switcher {
             display: flex; background: rgba(255,255,255,0.4); 
             padding: 4px; border-radius: 12px; margin-bottom: 20px; gap: 4px;
@@ -53,340 +42,219 @@
         }
         .view-btn.active { background: white; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
 
-        .upload-area { position: relative; width: 100%; height: 80px; margin-top: 10px; }
+        .upload-area { position: relative; width: 100%; height: 80px; margin: 15px 0; }
         #file-input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10; }
         .fake-upload-ui {
             position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
             background: white; border: 2px dashed var(--blue); border-radius: 15px;
-            font-weight: 500; color: #747d8c; pointer-events: none; transition: 0.3s;
+            font-weight: 500; color: #747d8c; pointer-events: none;
         }
 
-        /* 动态列表样式控制 */
-        #sortable-list { display: grid; gap: 20px; }
+        /* --- 找回两种布局样式 --- */
+        #sortable-list { display: grid; gap: 15px; }
         
-        #sortable-list.grid-view { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+        /* 大图标模式 */
+        #sortable-list.grid-view { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
         #sortable-list.grid-view .thumb-item { flex-direction: column; }
-        #sortable-list.grid-view .thumb-item img { width: 100%; height: 180px; }
+        #sortable-list.grid-view .thumb-item img { width: 100%; height: 160px; }
 
+        /* 列表模式 */
         #sortable-list.list-view { grid-template-columns: 1fr; gap: 8px; }
-        #sortable-list.list-view .thumb-item { 
-            flex-direction: row; align-items: center; padding: 8px 15px; 
-        }
-        #sortable-list.list-view .thumb-item img { width: 40px; height: 40px; margin-right: 15px; border-radius: 6px; }
+        #sortable-list.list-view .thumb-item { flex-direction: row; align-items: center; padding: 8px 15px; }
+        #sortable-list.list-view .thumb-item img { width: 45px; height: 45px; margin-right: 15px; }
         #sortable-list.list-view .text-edit { margin-top: 0; flex: 1; }
-        #sortable-list.list-view .remove-btn { position: static; margin-left: 15px; transform: none; }
 
         .thumb-item {
-    display: flex; position: relative; background: white; border-radius: 18px; padding: 12px;
-    border: 1px solid var(--border); 
-    transition: transform 0.2s; /* 缩短过渡时间 */
-    will-change: transform; /* 告诉浏览器提前准备硬件加速 */
-    transform: translateZ(0); /* 开启 GPU 加速 */
-}
-
-/* 新增：拖拽时的样式（减少阴影计算） */
-.sortable-ghost {
-    opacity: 0.4;
-    background: var(--blue) !important;
-}
-
-.sortable-drag {
-    opacity: 0.9;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-}
-        .thumb-item img { object-fit: cover; border-radius: 12px; cursor: grab; }
-
-        .remove-btn {
-            position: absolute; top: -5px; right: -5px; width: 28px; height: 28px;
-            background: #ff6b6b; color: white; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; border: 2px solid white; z-index: 20;
+            display: flex; position: relative; background: white; 
+            border-radius: 18px; padding: 12px; border: 1px solid var(--border);
+            transition: 0.2s;
         }
+
+        .thumb-item img { object-fit: cover; border-radius: 12px; cursor: grab; background: #f8f9fa; }
 
         .text-edit {
             width: 100%; padding: 10px; margin-top: 10px; border: 1px solid #f1f2f6;
             border-radius: 10px; font-size: 14px; box-sizing: border-box;
         }
 
-        .btn-submit {
-            width: 100%; padding: 16px; margin-top: 25px;
-            background: linear-gradient(135deg, var(--blue) 0%, var(--pink) 100%);
-            border: none; border-radius: 15px; color: #2f3542; font-weight: bold; cursor: pointer;
-            box-shadow: 0 4px 15px rgba(165, 216, 255, 0.4);
-            transition: 0.3s;
+        .remove-btn {
+            position: absolute; top: -5px; right: -5px; width: 26px; height: 26px;
+            background: #ff6b6b; color: white; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; border: 2px solid white; z-index: 20;
         }
-        .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(165, 216, 255, 0.6); }
+
+        .btn-submit {
+            width: 100%; padding: 16px; margin-top: 20px;
+            background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%);
+            border: none; border-radius: 15px; color: white; font-weight: bold; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: 0.3s;
+        }
+        .btn-submit:hover { transform: scale(1.02); }
 
         #progress-overlay {
-            position: fixed; inset: 0; background: rgba(255, 255, 255, 0.7);
+            position: fixed; inset: 0; background: rgba(255, 255, 255, 0.9);
             backdrop-filter: blur(15px); z-index: 10000;
             display: none; flex-direction: column; align-items: center; justify-content: center;
         }
-        .progress-box { width: 300px; height: 12px; background: rgba(0,0,0,0.05); border-radius: 10px; overflow: hidden; position: relative; border: 1px solid rgba(255,255,255,0.8); }
-        .progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #a5d8ff, #ffdeeb, #a5d8ff); background-size: 200% 100%; animation: flowBar 2s linear infinite; border-radius: 10px; transition: width 0.3s; }
-        @keyframes flowBar { 0% { background-position: 0% 0%; } 100% { background-position: -200% 0%; } }
-        .progress-text { margin-top: 20px; font-weight: bold; color: #4a5568; letter-spacing: 2px; }
+        .progress-box { width: 300px; height: 10px; background: #eee; border-radius: 10px; overflow: hidden; }
+        .progress-bar { width: 0%; height: 100%; background: #9face6; transition: width 0.2s; }
+        .progress-text { margin-top: 15px; font-size: 14px; font-weight: bold; color: #57606f; }
     </style>
 </head>
 <body>
     <div id="progress-overlay">
         <div class="progress-box"><div class="progress-bar" id="inner-bar"></div></div>
-        <div class="progress-text" id="prog-txt">等待中...</div>
+        <div class="progress-text" id="prog-txt">正在合成超长画卷...</div>
     </div>
 
     <div class="container">
         <div class="glass-panel">
-    <h2>长图合成工具</h2>
-    <div class="view-switcher">
-        <button class="view-btn active" onclick="switchView('grid', this)">🖼️ 大图标</button>
-        <button class="view-btn" onclick="switchView('list', this)">📋 详细信息</button>
-    </div>
-    <div class="upload-area">
-        <input type="file" id="file-input" multiple accept="image/*">
-        <div class="fake-upload-ui" id="ui-tip">🌸 点击或拖入素材</div>
-    </div>
-    <div style="margin-top:25px;">
-        <label>🖋️ 水印字号</label>
-        <input type="number" id="font-size" value="60" style="width:100%; padding:10px; margin-top:8px; border-radius:10px; border:1px solid #eee;">
-    </div>
+            <h2>长图合成工具</h2>
+            
+            <div class="view-switcher">
+                <button class="view-btn active" onclick="switchView('grid', this)">🖼️ 大图标</button>
+                <button class="view-btn" onclick="switchView('list', this)">📋 详细列表</button>
+            </div>
 
-    
-    
-    <div style="margin-top:20px;">
-        <label>💾 导出格式</label>
-        <select id="export-format" style="width:100%; padding:10px; margin-top:8px; border-radius:10px; border:1px solid #eee; background: white;">
-            <option value="image/jpeg">JPEG (体积小)</option>
-            <option value="image/png">PNG (高质量)</option>
-        </select>
-    </div>
+            <div class="upload-area">
+                <input type="file" id="file-input" multiple accept="image/*">
+                <div class="fake-upload-ui">🌸 载入素材</div>
+            </div>
 
-    <button class="btn-submit" onclick="processImages()">✨ 导出拼接图</button>
-    <div style="margin-top:25px; padding-top:20px; border-top: 1px dashed rgba(0,0,0,0.1);">
-</div>
-</div>
+            <div style="margin-top:15px;">
+                <label style="font-size:13px;">🖋️ 水印字号 (基于4K)</label>
+                <input type="number" id="font-size" value="120" style="width:100%; padding:8px; border-radius:8px; border:1px solid #ddd;">
+            </div>
+
+            <button class="btn-submit" onclick="ultimateStitch()">🚀 强制合并为一张图</button>
+            <p style="font-size:11px; color:#999; margin-top:10px;">* 超长图片会自动压缩比例以确保合成成功</p>
+        </div>
+
         <div class="glass-panel">
             <div id="sortable-list" class="grid-view"></div>
         </div>
     </div>
-    <canvas id="mainCanvas" style="display:none;"></canvas>
 
     <script>
         const fileInput = document.getElementById('file-input');
         const list = document.getElementById('sortable-list');
-        const uiTip = document.getElementById('ui-tip');
-        const overlay = document.getElementById('progress-overlay');
-        const innerBar = document.getElementById('inner-bar');
-        const progTxt = document.getElementById('prog-txt');
-        let imageFiles = new Map();
+        const imageFiles = new Map();
 
-        // 核心功能：自动排序
-        function autoSortList() {
-            const items = Array.from(list.children);
-            items.sort((a, b) => {
-                const nameA = a.querySelector('.text-edit').value.toLowerCase();
-                const nameB = b.querySelector('.text-edit').value.toLowerCase();
-                return nameA.localeCompare(nameB, undefined, {numeric: true, sensitivity: 'base'});
-            });
-            items.forEach(item => list.appendChild(item));
-        }
-
+        // --- 找回视图切换函数 ---
         function switchView(type, btn) {
             document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             list.className = type === 'grid' ? 'grid-view' : 'list-view';
         }
 
-        window.addEventListener('dragover', (e) => { e.preventDefault(); document.body.classList.add('drag-active'); });
-        window.addEventListener('dragleave', (e) => { if (e.clientX <= 0) document.body.classList.remove('drag-active'); });
-        window.addEventListener('drop', (e) => {
-            e.preventDefault();
-            document.body.classList.remove('drag-active');
-            handleFiles(e.dataTransfer.files);
+        fileInput.addEventListener('change', (e) => {
+            Array.from(e.target.files).forEach(file => {
+                if(!file.type.startsWith('image/')) return;
+                const id = 'img_' + Math.random().toString(36).substr(2, 9);
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        imageFiles.set(id, { img, name: file.name });
+                        const div = document.createElement('div');
+                        div.className = 'thumb-item';
+                        div.dataset.id = id;
+                        div.innerHTML = `
+                            <img src="${event.target.result}" class="drag-handle">
+                            <input type="text" class="text-edit" value="${file.name.split('.')[0]}">
+                            <div class="remove-btn" onclick="removeItem(this, '${id}')">×</div>
+                        `;
+                        list.appendChild(div);
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
         });
-
-        fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
-
-        function handleFiles(files) {
-    const fileArray = Array.from(files).filter(f => f.type.startsWith('image/'));
-    
-    fileArray.forEach(file => {
-        const id = 'img_' + Math.random().toString(36).substr(2, 9);
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const img = new Image();
-            img.onload = () => {
-                // 1. 存储原图用于导出
-                imageFiles.set(id, { img, name: file.name });
-
-                // 2. 创建缩略图用于展示，解决卡顿
-                const offscreenCanvas = document.createElement('canvas');
-                const octx = offscreenCanvas.getContext('2d');
-                const scale = Math.min(400 / img.width, 1); 
-                offscreenCanvas.width = img.width * scale;
-                offscreenCanvas.height = img.height * scale;
-                octx.drawImage(img, 0, 0, offscreenCanvas.width, offscreenCanvas.height);
-                const thumbUrl = offscreenCanvas.toDataURL('image/jpeg', 0.7);
-
-                // 3. 渲染到列表
-                const div = document.createElement('div');
-                div.className = 'thumb-item';
-                div.dataset.id = id;
-                div.innerHTML = `
-                    <img src="${thumbUrl}" class="drag-handle">
-                    <input type="text" class="text-edit" value="${file.name.replace(/\.[^/.]+$/, "")}">
-                    <div class="remove-btn" onclick="removeItem(this, '${id}')">×</div>
-                `;
-                list.appendChild(div);
-                uiTip.innerText = `已装载 ${imageFiles.size} 张图片`;
-            };
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-    });
-}
 
         function removeItem(btn, id) {
             btn.closest('.thumb-item').remove();
             imageFiles.delete(id);
-            uiTip.innerText = `已装载 ${imageFiles.size} 张图片`;
         }
 
-        new Sortable(list, {
-    animation: 150,       // 缩短动画时间（从300减至150）
-    handle: ".drag-handle",
-    forceFallback: false, // 尽量使用原生拖拽以提升性能
-    swapThreshold: 0.5,   // 提高交换阈值，减少频繁跳动
-    direction: () => list.className === 'grid-view' ? 'xy' : 'vertical', // 动态识别方向
-    onStart: function() {
-        // 开始拖拽时可以暂时禁用一些复杂的阴影或滤镜（可选）
-        document.body.style.cursor = 'grabbing';
-    },
-    onEnd: function() {
-        document.body.style.cursor = 'default';
-    }
-});
+        new Sortable(list, { animation: 150, handle: ".drag-handle" });
 
-        async function processImages() {
+        // 保留你最新的高效合成引擎
+        async function ultimateStitch() {
             const items = Array.from(list.children);
-            if (items.length === 0) return alert("请先上传图片");
+            if (!items.length) return alert("请先上传图片");
 
+            const overlay = document.getElementById('progress-overlay');
+            const innerBar = document.getElementById('inner-bar');
+            const progTxt = document.getElementById('prog-txt');
             overlay.style.display = 'flex';
-            innerBar.style.width = '10%';
-            progTxt.innerText = "正在读取图片...";
 
-            const canvas = document.getElementById('mainCanvas');
-            const ctx = canvas.getContext('2d', { alpha: true });
-            const fontSize = parseInt(document.getElementById('font-size').value);
+            let BASE_WIDTH = 4000;
+            const MAX_ALLOWED_HEIGHT = 60000; 
+            let totalHeight = 0;
 
-            let maxWidth = 0, totalHeight = 0;
-            const tasks = items.map(item => {
+            const preTasks = items.map(item => {
                 const data = imageFiles.get(item.dataset.id);
-                maxWidth = Math.max(maxWidth, data.img.width);
-                totalHeight += data.img.height;
-                return { img: data.img, text: item.querySelector('.text-edit').value, h: data.img.height, w: data.img.width };
+                const h = data.img.height * (BASE_WIDTH / data.img.width);
+                totalHeight += h;
+                return { img: data.img, text: item.querySelector('.text-edit').value, originalRatio: data.img.height / data.img.width };
             });
 
-            canvas.width = maxWidth;
-            canvas.height = totalHeight;
-            // 获取当前选择的格式
-            const exportFormat = document.getElementById('export-format').value;
+            let finalWidth = BASE_WIDTH;
+            let finalHeight = totalHeight;
 
-            if (exportFormat === 'image/jpeg') {
-                // 如果是 JPG，必须填充白色背景
-                ctx.fillStyle = "#ffffff";
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-            } else {
-                // 如果是 PNG，则彻底清空画布，保持透明
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (totalHeight > MAX_ALLOWED_HEIGHT) {
+                const compressRatio = MAX_ALLOWED_HEIGHT / totalHeight;
+                finalWidth = Math.floor(BASE_WIDTH * compressRatio);
+                finalHeight = MAX_ALLOWED_HEIGHT;
+                progTxt.innerText = "智能缩放下合成中...";
             }
 
+            const canvas = document.createElement('canvas');
+            canvas.width = finalWidth;
+            canvas.height = finalHeight;
+            const ctx = canvas.getContext('2d');
+            const fontSize = parseInt(document.getElementById('font-size').value) * (finalWidth / 4000);
+
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, finalWidth, finalHeight);
+
             let currentY = 0;
-            tasks.forEach((task, index) => {
-                ctx.drawImage(task.img, (maxWidth - task.w) / 2, currentY);
-                ctx.font = `bold ${fontSize}px "PingFang SC", sans-serif`;
+            for (let i = 0; i < preTasks.length; i++) {
+                const task = preTasks[i];
+                const drawH = finalWidth * task.originalRatio;
+                ctx.drawImage(task.img, 0, currentY, finalWidth, drawH);
+
+                ctx.font = `bold ${fontSize}px "PingFang SC"`;
                 ctx.textAlign = "right";
-                const textX = maxWidth - 40, textY = currentY + 40 + fontSize;
-                
-                ctx.strokeStyle = "black";
-                ctx.lineWidth = Math.max(2, fontSize / 15);
-                ctx.lineJoin = "round";
-                ctx.strokeText(task.text, textX, textY);
+                ctx.strokeStyle = "rgba(0,0,0,0.5)";
+                ctx.lineWidth = fontSize/8;
+                ctx.strokeText(task.text, finalWidth - 40, currentY + drawH - 40);
                 ctx.fillStyle = "white";
-                ctx.fillText(task.text, textX, textY);
-                
-                currentY += task.h;
-                innerBar.style.width = `${40 + ((index + 1) / tasks.length) * 40}%`;
-            });
+                ctx.fillText(task.text, finalWidth - 40, currentY + drawH - 40);
 
-            progTxt.innerText = "正在封装导出...";
-    await new Promise(r => setTimeout(r, 500));
+                currentY += drawH;
+                innerBar.style.width = `${(i / preTasks.length) * 90}%`;
+                progTxt.innerText = `缝合进度: ${Math.round((i/preTasks.length)*100)}%`;
+                await new Promise(r => requestAnimationFrame(r));
+            }
 
-    // --- 修改开始 ---
-    const format = document.getElementById('export-format').value;
-    const extension = format === 'image/jpeg' ? 'jpg' : 'png';
-    const quality = format === 'image/jpeg' ? 0.9 : undefined;
-
-    canvas.toBlob((blob) => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `crystal_stitch_${Date.now()}.${extension}`;
-        a.click();
-        
-        setTimeout(() => { 
-            overlay.style.display = 'none'; 
-            innerBar.style.width = '0%'; 
-        }, 800);
-        
-        URL.revokeObjectURL(url);
-    }, format, quality);
-    // --- 修改结束 ---
-}
-// --- 接入 Gemini AI 的核心函数 ---
-async function askGemini() {
-    const apiKey = document.getElementById('api-key').value.trim();
-    const responseBox = document.getElementById('ai-response');
-    
-    if (!apiKey) return alert("请先输入 API Key");
-    
-    const titles = Array.from(document.querySelectorAll('.text-edit')).map(input => input.value);
-    if (titles.length === 0) return alert("先传几张图嘛~");
-
-    responseBox.innerHTML = "<span style='color:#6c5ce7'>⏳ 正在寻找最稳网络路径...</span>";
-
-    // 换一个更稳定的中转前缀，且直接使用 v1 接口
-    const proxyUrl = `https://api.geren.one/v1/chat/completions`; 
-
-    try {
-        const response = await fetch(proxyUrl, {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}` // 注意：部分中转要求把 Key 放在这里
-            },
-            body: JSON.stringify({
-                model: "gemini-1.5-flash",
-                messages: [{
-                    role: "user",
-                    content: `我制作了一张长图，主题是：${titles.join('、')}。请写一段小红书文案，带 Emoji。`
-                }]
-            })
-        });
-
-        if (!response.ok) throw new Error(`服务器返回错误: ${response.status}`);
-
-        const data = await response.json();
-        const aiText = data.choices[0].message.content;
-        responseBox.innerText = aiText;
-
-    } catch (error) {
-        console.error(error);
-        // 如果还不行，启用【保底模拟方案】，确保工具不挂掉
-        responseBox.innerHTML = "<span style='color:#f39c12'>⚠️ 网络波动，已启动离线 AI 灵感：</span><br>" + 
-                                 `✨ 氛围感记录 | ${titles.slice(0,2).join(' · ')}\n把碎片拼凑成诗，记录当下的温柔。#记录生活`;
-    }
-}
+            progTxt.innerText = "正在导出高清长图...";
+            innerBar.style.width = '100%';
+            
+            canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Full_Stitch_${Date.now()}.jpg`;
+                a.click();
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                    innerBar.style.width = '0%';
+                }, 1000);
+            }, 'image/jpeg', 0.85);
+        }
     </script>
 </body>
-
 </html>

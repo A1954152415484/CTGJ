@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crystal Stitch - 智能排序版</title>
+    <title>长图合成工具</title>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
         :root {
@@ -131,12 +131,12 @@
 <body>
     <div id="progress-overlay">
         <div class="progress-box"><div class="progress-bar" id="inner-bar"></div></div>
-        <div class="progress-text" id="prog-txt">正在注入水晶能量...</div>
+        <div class="progress-text" id="prog-txt">等待中...</div>
     </div>
 
     <div class="container">
         <div class="glass-panel">
-    <h2>Crystal Stitch</h2>
+    <h2>长图合成工具</h2>
     <div class="view-switcher">
         <button class="view-btn active" onclick="switchView('grid', this)">🖼️ 大图标</button>
         <button class="view-btn" onclick="switchView('list', this)">📋 详细信息</button>
@@ -388,4 +388,5 @@ async function askGemini() {
 }
     </script>
 </body>
+
 </html>
